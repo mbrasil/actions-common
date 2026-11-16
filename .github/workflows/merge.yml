@@ -112,7 +112,7 @@ on:
         type: boolean
         required: false
         default: false
-        description: "Add the npm packages bundled in the build's web apps (embedded sbom/bom.json) to the RC build-info and reindex it in Xray"
+        description: "Add the npm packages bundled in the build's web apps (embedded sbom/bom.json) to the RC build-info and reindex it in Xray. Also runs when the build step failed after deploying (a failed integration-test check does not unpublish the build-info); the step only warns when it cannot add the modules"
     outputs:
       current-version:
         value: ${{ jobs.release-candidate.outputs.current-version }}
@@ -456,7 +456,7 @@ jobs:
           int_test_report_path: '**/target/failsafe-reports/TEST*.xml'
 
       - name: Add npm modules to the build-info
-        if: ${{ inputs.add_npm_buildinfo == true }}
+        if: ${{ !cancelled() && inputs.add_npm_buildinfo == true }}
         uses: pentaho/actions-common/.github/actions/npm-buildinfo@stable
         with:
           build_name: ${{ steps.post-setup.outputs.build_name }}
