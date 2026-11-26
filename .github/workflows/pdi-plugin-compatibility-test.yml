@@ -164,18 +164,20 @@ jobs:
         if: always()
         id: get-report-dir
         shell: bash
+        env:
+          PLUGIN_DIRECTORY: ${{ inputs.plugin-directory-name }}
         run: |
-          plugin_dir="${{ inputs.plugin-directory-name }}"
-          if [[ "$plugin_dir" == "." ]]; then
-            dir=$(realpath $(dirname $(find . -wholename "**/target/failsafe-reports/TEST*" -print -quit)))
-          else
-            dir=$(realpath $(dirname $(find . -wholename "**/${plugin_dir}/**/target/failsafe-reports/TEST*" -print -quit)))
+          report=$(find "$PLUGIN_DIRECTORY" -type f -path '*/target/failsafe-reports/TEST*.xml' -print -quit)
+          if [[ -z "$report" ]]; then
+            echo "::error::No Failsafe XML reports found under $PLUGIN_DIRECTORY"
+            exit 1
           fi
-          echo $dir
+          dir=$(realpath "$(dirname "$report")")
+          echo "$dir"
           echo "TEST_REPORT_DIR=$dir" >> $GITHUB_ENV
 
       - name: Report to practitest
-        if: always()
+        if: ${{ always() && steps.get-report-dir.outcome == 'success' }}
         uses: hv-actions/report-archiver@firecracker
         with:
           lookup-folder: ${{ env.TEST_REPORT_DIR }}

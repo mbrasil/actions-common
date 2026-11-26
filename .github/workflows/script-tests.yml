@@ -20,6 +20,7 @@ on:
       - '.github/workflows/build-plugins.yml'
       - '.github/workflows/integration-tests-npm.yml'
       - '.github/workflows/notify-pull-request.yml'
+      - '.github/workflows/pdi-plugin-compatibility-test.yml'
       - '.github/workflows/script-tests.yml'
 
 permissions:
