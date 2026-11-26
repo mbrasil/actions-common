@@ -311,6 +311,54 @@ describe("WorkflowScripts", () => {
     w = new Workspace();
   });
 
+  describe("PDI compatibility Failsafe report discovery", () => {
+    let script;
+
+    beforeEach(() => {
+      const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/pdi-plugin-compatibility-test.yml"), "utf8");
+      const step = workflow.slice(indexOf(workflow, "- name: Get failsafe report dir"),
+        indexOf(workflow, "- name: Report to practitest"));
+      const match = step.match(/run: \|\n((?: {10}.*\n)+)/);
+      assert.ok(match, "Missing report discovery script");
+      script = match[1].replace(/^ {10}/gm, "");
+      assert.match(workflow, /if: \$\{\{ always\(\) && steps\.get-report-dir\.outcome == 'success' \}\}/);
+    });
+
+    function runDiscovery(plugin) {
+      return spawnSync("bash", ["-eo", "pipefail", "-c", script], {
+        cwd: w.base,
+        env: { ...w.env, PLUGIN_DIRECTORY: plugin, GITHUB_ENV: w.output },
+        encoding: "utf8",
+      });
+    }
+
+    for (const [plugin, reportDir] of [
+      ["python-executor/impl", "python-executor/impl/target/failsafe-reports"],
+      ["projects", "projects/integration-test/target/failsafe-reports"],
+      [".", "target/failsafe-reports"],
+    ]) {
+      test(`finds reports in ${reportDir}`, () => {
+        const directory = path.join(w.base, reportDir);
+        fs.mkdirSync(directory, { recursive: true });
+        fs.writeFileSync(path.join(directory, "TEST-example.xml"), "<testsuite/>");
+        const result = runDiscovery(plugin);
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(fs.readFileSync(w.output, "utf8"), `TEST_REPORT_DIR=${directory}\n`);
+      });
+    }
+
+    test("fails explicitly when the selected module has no reports", () => {
+      fs.mkdirSync(path.join(w.base, "empty"), { recursive: true });
+      const unrelated = path.join(w.base, "other/target/failsafe-reports");
+      fs.mkdirSync(unrelated, { recursive: true });
+      fs.writeFileSync(path.join(unrelated, "TEST-other.xml"), "<testsuite/>");
+      const result = runDiscovery("empty");
+      assert.notEqual(result.status, 0);
+      assert.match(result.stdout, /No Failsafe XML reports found under empty/);
+      assert.equal(fs.existsSync(w.output), false);
+    });
+  });
+
   afterEach(() => {
     w.dispose();
   });

@@ -35,6 +35,7 @@ Documents the **auxiliary and supporting workflows** that are either called inte
 | [`release-npm.yml`](release-npm.yml) | Promotes an NPM package release to the release Artifactory registry, with optional dry-run. |
 | [`bootstrap-image.yml`](bootstrap-image.yml) | Builds and pushes the CI runner Docker image to Artifactory for JDK 17 and JDK 21. |
 | [`script-tests.yml`](script-tests.yml) | Runs npm build-info unit tests and plugin workflow script regression tests on pull requests touching their scripts, shared actions or covered workflows. |
+| [`pdi-plugin-compatibility-test.yml`](pdi-plugin-compatibility-test.yml) | Runs Maven plugin integration tests and archives the first Failsafe report directory found within the selected module, including the module itself. Missing reports fail the job. |
 | [`integration-tests-npm.yml`](integration-tests-npm.yml) | npm Playwright tests with server-image SQL, optional PR plugins (`use_pr_build`), directory-enabled Practitest, Slack, automatic cleanup and default-off verbose diagnostics. |
 | [`build-plugins.yml`](build-plugins.yml) | Maven build with `-DbiserverHome`, optional unit tests and verbose diagnostics; uploads installed plugins as `pentaho-plugins`. |
 | [`notify-pull-request.yml`](notify-pull-request.yml) | Slack notification summarizing a pull request workflow through shared `notify-slack` action. |
